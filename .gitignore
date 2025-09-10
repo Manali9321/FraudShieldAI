@@ -4,3 +4,9 @@ test-results*/
 dist/
 .env
 *.zip
+node_modules/
+html-report*/
+playwright-report/
+test-results/
+.env
+
