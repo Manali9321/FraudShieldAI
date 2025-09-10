@@ -1,0 +1,24 @@
+# Node / tooling
+node_modules/
+npm-debug.log*
+yarn.lock
+package-lock.json
+
+# Build & cache
+dist/
+coverage/
+.cache/
+.tmp/
+
+# Playwright / reports
+playwright-report/
+html-report*/
+test-results/
+
+# Local data / runtime
+data/alerts.json
+
+# Env & OS
+.env
+.env.*
+.DS_Store

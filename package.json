@@ -1,0 +1,28 @@
+{
+  "name": "fraudshield-qa-playwright",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "dev:server": "ts-node src/server/index.ts",
+    "ai:gen-data": "ts-node src/ai/generateData.ts",
+    "test": "playwright test --reporter=list,json",
+    "test:headed": "playwright test --headed",
+    "ai:summarize": "ts-node src/ai/summarize.ts",
+    "test:summary": "playwright test && ts-node src/ai/summarize.ts",
+    "report:open": "npx playwright show-report html-report",
+    "test:summary:open": "playwright test && ts-node src/ai/summarize.ts && npx playwright show-report html-report",
+    "demo:local:open": "ts-node src/server/index.ts & sleep 1 && ts-node src/ai/generateData.ts && playwright test && ts-node src/ai/summarize.ts && npx playwright show-report html-report"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@playwright/test": "^1.46.0",
+    "@types/express": "^4.17.21",
+    "@types/node": "^18.19.39",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "js-yaml": "^4.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  }
+}

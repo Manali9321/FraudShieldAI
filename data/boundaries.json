@@ -1,0 +1,6 @@
+[
+  { "name":"small_amount", "amount":50,   "usualAvg":500,  "distance":5,   "device":0.1, "wantAlert":false },
+  { "name":"huge_amount",  "amount":15000,"usualAvg":2000, "distance":20,  "device":0.2, "wantAlert":true  },
+  { "name":"far_location", "amount":1200, "usualAvg":1100, "distance":1200,"device":0.1, "wantAlert":true  },
+  { "name":"device_anom",  "amount":1300, "usualAvg":1200, "distance":50,  "device":0.9, "wantAlert":true  }
+]

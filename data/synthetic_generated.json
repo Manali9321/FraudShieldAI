@@ -1,0 +1,66 @@
+[
+  {
+    "amount": 1200,
+    "usualAvg": 1100,
+    "locationDistanceKm": 20,
+    "deviceAnomalyScore": 0.1,
+    "expected": "OK",
+    "why": []
+  },
+  {
+    "amount": 9000,
+    "usualAvg": 3000,
+    "locationDistanceKm": 50,
+    "deviceAnomalyScore": 0.2,
+    "expected": "ALERT",
+    "why": [
+      "high_value"
+    ]
+  },
+  {
+    "amount": 1500,
+    "usualAvg": 1400,
+    "locationDistanceKm": 1200,
+    "deviceAnomalyScore": 0.1,
+    "expected": "ALERT",
+    "why": [
+      "unusual_location"
+    ]
+  },
+  {
+    "amount": 1300,
+    "usualAvg": 1200,
+    "locationDistanceKm": 50,
+    "deviceAnomalyScore": 0.9,
+    "expected": "ALERT",
+    "why": [
+      "behavioural_anomaly"
+    ]
+  },
+  {
+    "amount": 6000,
+    "usualAvg": 5800,
+    "locationDistanceKm": 10,
+    "deviceAnomalyScore": 0.2,
+    "expected": "OK",
+    "why": []
+  },
+  {
+    "amount": 1400,
+    "usualAvg": 1300,
+    "locationDistanceKm": 30,
+    "deviceAnomalyScore": 0.69,
+    "expected": "OK",
+    "why": []
+  },
+  {
+    "amount": 1600,
+    "usualAvg": 1000,
+    "locationDistanceKm": 30,
+    "deviceAnomalyScore": 0.2,
+    "expected": "ALERT",
+    "why": [
+      "high_value"
+    ]
+  }
+]

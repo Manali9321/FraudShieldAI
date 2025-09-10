@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>FraudShield Analyst Dashboard</title>
+  <style>
+    :root { --bg:#0b0f14; --panel:#121821; --panel-soft:#0f141c; --text:#e6edf3; --muted:#9fb0c3; --border:#1f2a37; --accent:#4f9cff; --green:#22c55e; --red:#f43f5e; --chip:#1d2836; }
+    html.light { --bg:#f6f8fb; --panel:#fff; --panel-soft:#fff; --text:#0b1220; --muted:#5b6b7d; --border:#e5e7eb; --accent:#2563eb; --green:#16a34a; --red:#dc2626; --chip:#eef2f7; }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+    .container{max-width:980px;margin:28px auto;padding:0 16px} h1{margin:0 0 10px;font-size:28px;letter-spacing:.3px}
+    .row{display:flex;align-items:center;gap:10px} .pill{padding:4px 8px;border-radius:999px;background:var(--chip);border:1px solid var(--border);color:var(--muted);font-size:12px;margin-left:auto}
+    .toolbar,.filters{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+    .toolbar{margin:12px 0 14px} .filters{margin:0 0 18px}
+    button{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--panel-soft);color:var(--text);cursor:pointer} button:hover{border-color:var(--accent)}
+    .muted{color:var(--muted);font-size:13px} .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+    .card{grid-column:span 12;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:14px 16px;box-shadow:0 10px 28px rgba(0,0,0,.15)} @media (min-width:760px){.card{grid-column:span 6}}
+    .status{font-weight:700}.status.open{color:var(--red)}.status.cleared{color:var(--green)}
+    .chips{display:flex;gap:8px;margin:6px 0 2px;flex-wrap:wrap}.chip{background:var(--chip);border:1px solid var(--border);padding:3px 8px;border-radius:999px;font-size:12px;color:var(--muted)}
+    .kvs code{background:rgba(255,255,255,.06);padding:2px 6px;border-radius:8px}
+    .empty{text-align:center;color:var(--muted);padding:40px;border:1px dashed var(--border);border-radius:12px;background:var(--panel)}
+    a.link{color:var(--accent);text-decoration:none} a.link:hover{text-decoration:underline}
+    label{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:13px} input[type="checkbox"],input[type="radio"]{transform:translateY(1px)}
+    #dbg{font-size:12px;color:var(--muted)}
+    #raw{white-space:pre-wrap;word-break:break-word;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px;margin-top:8px;display:none}
+
+  .qa-panel{margin:16px 0;padding:12px;background:var(--panel);border:1px solid var(--border);border-radius:14px}
+  .qa-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;margin-top:8px}
+  .qa-card{grid-column:span 12;background:var(--panel-soft);border:1px solid var(--border);border-radius:12px;padding:12px}
+  @media (min-width:760px){ .qa-card{grid-column:span 4} }
+
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="row">
+      <h1>FraudShield Analyst Dashboard</h1>
+      <span id="countPill" class="pill">0 alerts</span>
+      <span id="statusPill" class="muted">status: — /alerts</span>
+    </div>
+
+    <div class="toolbar">
+      <button id="seedBtn" onclick="seedAlerts()">Seed 3 Alerts</button>
+      <button onclick="clearAll()">Clear All</button>
+      <button id="refreshBtn" type="button">Refresh</button>
+      <span class="muted">Auto-refresh</span>
+      <label><input id="autoToggle" type="checkbox" checked> every 3s</label>
+      <span class="muted" style="margin-left:auto">Theme</span>
+      <button onclick="toggleTheme()" id="themeBtn">Dark</button>
+    </div>
+
+    <div class="filters">
+      <label><input type="radio" name="status" value="all" checked> All</label>
+      <label><input type="radio" name="status" value="OPEN"> Open</label>
+      <label><input type="radio" name="status" value="CLEARED"> Cleared</label>
+      <span class="muted" style="margin-left:12px">Filter reasons:</span>
+      <label><input type="checkbox" class="reason" value="high_value" checked> high_value</label>
+      <label><input type="checkbox" class="reason" value="unusual_location" checked> unusual_location</label>
+      <label><input type="checkbox" class="reason" value="behavioural_anomaly" checked> behavioural_anomaly</label>
+      <span id="dbg" class="muted" style="margin-left:auto">status: –</span>
+      <label><input id="showRaw" type="checkbox"> Show raw JSON</label>
+    </div>
+
+    <!-- QA Metrics panel -->
+<div class="qa-panel">
+  <div class="row" style="justify-content:space-between; align-items:center;">
+    <h3 style="margin:0">QA Metrics</h3>
+    <span class="muted">Quick, demo-friendly checks</span>
+  </div>
+
+  <div class="qa-grid">
+    <div class="qa-card">
+      <h4>Latency probe</h4>
+      <p class="muted">10× POST /score</p>
+      <button onclick="runLatencyProbe()">Run probe</button>
+      <div id="latencyOut" class="muted" style="margin-top:8px">—</div>
+    </div>
+
+    <div class="qa-card">
+      <h4>Boundary matrix</h4>
+      <p class="muted">Validates edge inputs</p>
+      <button onclick="runBoundaryMatrix()">Run matrix</button>
+      <div id="matrixOut" class="muted" style="margin-top:8px">—</div>
+    </div>
+
+    <div class="qa-card">
+      <h4>Explainability coverage</h4>
+      <p class="muted">Counts reasons from /alerts</p>
+      <button onclick="refreshReasonCoverage()">Refresh</button>
+      <ul id="coverageOut" class="muted" style="margin-top:8px; padding-left:18px; margin-bottom:0"></ul>
+    </div>
+  </div>
+</div>
+
+
+    <div id="alerts" class="grid"></div>
+    <pre id="raw"></pre>
+
+   <p class="muted" style="margin-top:14px">
+  Tip: run <code>npm run test:summary</code> to generate alerts while executing TC1–TC6. View the Playwright report via   
+  <button type="button" onclick="openReport()">Open HTML report</button>
+</p>
+    
+  </div>
+
+  <script>
+    // ---------- Theme (null-safe) ----------
+    const pref = localStorage.getItem('theme') || 'dark';
+    setTheme(pref);
+    function setTheme(mode){
+      document.documentElement.classList.toggle('light', mode==='light');
+      localStorage.setItem('theme', mode);
+      const b = document.getElementById('themeBtn');
+      if (b) b.textContent = mode==='light' ? 'Light' : 'Dark';
+    }
+    function toggleTheme(){ setTheme(document.documentElement.classList.contains('light') ? 'dark' : 'light'); }
+
+    // ---------- Filters ----------
+    const state = { status: 'all', reasons: new Set(['high_value','unusual_location','behavioural_anomaly']) };
+    document.querySelectorAll('input[name="status"]').forEach(r => r.addEventListener('change', e => { state.status = e.target.value; loadAlerts(); }));
+    document.querySelectorAll('.reason').forEach(cb => cb.addEventListener('change', e => { e.target.checked ? state.reasons.add(e.target.value) : state.reasons.delete(e.target.value); loadAlerts(); }));
+
+    // ---------- Auto refresh ----------
+    const auto = document.getElementById('autoToggle');
+    auto.addEventListener('change', setupTimer);
+    let timer = null;
+    function setupTimer(){ if (timer) clearInterval(timer); if (auto.checked) timer = setInterval(loadAlerts, 3000); }
+    setupTimer();
+
+    // ---------- Debug helpers ----------
+    function setDbg(text){ const d=document.getElementById('dbg'); if(d) d.textContent = 'status: ' + text; }
+    function setRaw(obj){ const s=document.getElementById('showRaw'); const r=document.getElementById('raw'); if(s && r){ if(s.checked){ r.style.display='block'; r.textContent = JSON.stringify(obj,null,2);} else { r.style.display='none'; r.textContent=''; } } }
+
+    // ---------- Render ----------
+    function renderAlerts(items){
+      const root = document.getElementById('alerts'); root.innerHTML = '';
+      const filtered = items.filter(a => {
+        if (state.status !== 'all' && a.status !== state.status) return false;
+        if (!a.reasons?.some(r => state.reasons.has(r))) return false;
+        return true;
+      });
+      document.getElementById('countPill').textContent = `${filtered.length} alerts`;
+      if (!filtered.length){
+        root.innerHTML = '<div class="empty">No alerts match filters. Click <b>Seed 3 Alerts</b>, or run <code>npm run test:summary</code>.</div>';
+        return;
+      }
+      for (const a of filtered){
+        const div = document.createElement('div'); div.className = 'card';
+        const chips = (a.reasons||[]).map(r => `<span class="chip">${r}</span>`).join('');
+        const statusClass = a.status === 'OPEN' ? 'open' : 'cleared';
+        div.innerHTML = `
+          <div class="row" style="justify-content:space-between;">
+            <h3 style="margin:4px 0 8px">Alert ${a.id}</h3>
+            <span class="status ${statusClass}">${a.status}</span>
+          </div>
+          <div class="chips">${chips}</div>
+          <p class="muted" style="margin:6px 0 10px">Score: <b>${(a.score*100).toFixed(1)}%</b></p>
+          <div class="kvs muted">
+            Txn: amount=<code>${a.txn.amount}</code> · usualAvg=<code>${a.txn.usualAvg}</code> · dist=<code>${a.txn.locationDistanceKm}km</code> · device=<code>${a.txn.deviceAnomalyScore}</code>
+          </div>
+          ${a.status==='OPEN' ? '<div style="margin-top:12px"><button onclick="clearAlert(\''+a.id+'\')">Clear</button></div>' : ''}
+        `;
+        root.appendChild(div);
+      }
+    }
+
+    // ---------- API (always cache-bust) ----------
+    async function loadAlerts(){
+      try{
+        const res = await fetch('/alerts?ts=' + Date.now(), { cache: 'no-store' });
+        setDbg(res.status + ' /alerts');
+        const data = await res.json();
+        setRaw(data);
+        renderAlerts(data);
+      } catch (e){
+        setDbg('error fetching /alerts'); console.error(e);
+      }
+    }
+    async function clearAlert(id){ await fetch('/alerts/'+id+'/clear', { method:'POST' }); loadAlerts(); }
+    async function clearAll(){
+      const res = await fetch('/alerts?ts=' + Date.now(), { cache: 'no-store' });
+      const data = await res.json();
+      await Promise.all(data.filter(a => a.status==='OPEN').map(a => fetch('/alerts/'+a.id+'/clear',{method:'POST'})));
+      loadAlerts();
+    }
+
+    // ---------- Seed (uses /seed if available, else /score x3) ----------
+    async function seedAlerts(){
+    const btn = document.getElementById('seedBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Seeding…'; }
+    try {
+      // Check current alerts
+      const r0 = await fetch('/alerts?ts=' + Date.now(), { cache: 'no-store' });
+      const current = await r0.json();
+
+      // If already populated, ask whether to reset & seed fresh
+      if (Array.isArray(current) && current.length > 0) {
+        const ok = confirm(`There are already ${current.length} alert(s).\nReset & seed 3 fresh alerts?`);
+        if (!ok) { return; }
+        await fetch('/reset', { method: 'POST' });
+        // force=1 ensures /seed reseeds even if something races in
+        const res = await fetch('/seed?force=1', { method: 'POST' });
+        if (!res.ok) throw new Error('seed failed');
+        await loadAlerts();
+        return;
+      }
+
+      // Empty -> simple idempotent seed
+      const res = await fetch('/seed', { method: 'POST' });
+      if (!res.ok) {
+        // Fallback to client-side posts (in case /seed isn't available)
+        const post = (b) => fetch('/score', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b)
+        });
+        await post({ amount: 9000, usualAvg: 3000, locationDistanceKm: 50,   deviceAnomalyScore: 0.2 });
+        await post({ amount: 1500, usualAvg: 1400, locationDistanceKm: 1200, deviceAnomalyScore: 0.1 });
+        await post({ amount: 1300, usualAvg: 1200, locationDistanceKm: 50,   deviceAnomalyScore: 0.9 });
+      }
+      await loadAlerts();
+    } catch (e) {
+      console.error(e);
+      alert('Seeding failed. See console for details.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Seed 3 Alerts'; }
+    }
+  }
+
+    function manualRefresh(){ loadAlerts(); }
+    function openReport(){ window.open('http://localhost:9323', '_blank'); }
+
+    // Initial load
+    loadAlerts();
+    document.getElementById('showRaw').addEventListener('change', () => loadAlerts());
+
+    function openReport() {
+    // If you serve the report via Express at /report (recommended):
+    window.open('/report/', '_blank', 'noopener');
+
+    // If instead you run `npx playwright show-report` (port 9323), use this:
+    // window.open('http://localhost:9323/', '_blank', 'noopener');
+  }
+  // ---------- helpers ----------
+  function percentile(arr, p) {
+    const a = [...arr].sort((x,y)=>x-y);
+    const i = Math.ceil((p/100) * a.length) - 1;
+    return a[Math.max(0, i)];
+  }
+
+  // ---------- Latency probe ----------
+async function runLatencyProbe(n = 10) {
+  const out = document.getElementById('latencyOut');
+  out.textContent = 'Running…';
+  const payload = { amount: 2000, usualAvg: 1000, locationDistanceKm: 50, deviceAnomalyScore: 0.3 };
+
+  const times = [];
+  for (let i = 0; i < n; i++) {
+    const t0 = performance.now();
+    const res = await fetch('/score?dry=1', {                      // <— CHANGED
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, dryRun: true })           // <— optional
+    });
+    await res.json();
+    times.push(performance.now() - t0);
+  }
+  const p50 = percentile(times, 50).toFixed(1);
+  const p95 = percentile(times, 95).toFixed(1);
+  const p99 = percentile(times, 99).toFixed(1);
+  out.innerHTML = `p50: <b>${p50}ms</b> · p95: <b>${p95}ms</b> · p99: <b>${p99}ms</b>`;
+}
+
+
+  // ---------- Boundary matrix ----------
+  const defaultMatrix = [
+    { name:'small_amount', amount:50,   usualAvg:500,  distance:5,   device:0.1, wantAlert:false },
+    { name:'huge_amount',  amount:15000, usualAvg:2000, distance:20,  device:0.2, wantAlert:true  }
+  ];
+  async function loadBoundaryRows() {
+    try {
+      const r = await fetch('/qa/boundaries.json?ts=' + Date.now());
+      if (r.ok) return await r.json();
+    } catch (_) {}
+    return defaultMatrix;
+  }
+  async function runBoundaryMatrix() {
+  const out = document.getElementById('matrixOut');
+  out.textContent = 'Running…';
+  const rows = await loadBoundaryRows();
+  let pass = 0;
+  const items = [];
+  for (const r of rows) {
+    const res = await fetch('/score?dry=1', {                      // <— CHANGED
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        amount: r.amount,
+        usualAvg: r.usualAvg,
+        locationDistanceKm: r.distance,
+        deviceAnomalyScore: r.device,
+        dryRun: true                                               // <— optional
+      })
+    });
+    const j = await res.json();
+    const ok = (!!j.alert) === (!!r.wantAlert);
+    pass += ok ? 1 : 0;
+    items.push(`<li>${r.name}: ${ok ? '✅' : '❌'} (got ${j.alert ? 'alert' : 'no alert'})</li>`);
+  }
+  out.innerHTML = `<div><b>${pass}/${rows.length}</b> passed</div><ul style="margin:6px 0 0 18px">${items.join('')}</ul>`;
+}
+
+
+  // ---------- Explainability coverage ----------
+  async function refreshReasonCoverage() {
+    const list = document.getElementById('coverageOut');
+    list.innerHTML = '…';
+    const res = await fetch('/alerts?ts=' + Date.now(), { cache: 'no-store' });
+    const data = await res.json();
+    const counts = { high_value:0, unusual_location:0, behavioural_anomaly:0 };
+    (data || []).forEach(a => (a.reasons || []).forEach(r => (r in counts) && (counts[r]++)));
+    list.innerHTML = ['high_value','unusual_location','behavioural_anomaly']
+      .map(k => `<li>${k}: ${counts[k] ? '✅ ('+counts[k]+')' : '—'}</li>`)
+      .join('');
+  }
+
+  // Optional: auto-fill coverage on page load
+  refreshReasonCoverage();
+  
+  </script>
+</body>
+</html>
